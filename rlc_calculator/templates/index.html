@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RLC Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/katex.min.css">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 40px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+            font-size: 3em;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 30px;
+        }
+
+        .form-container, .formula-container {
+            flex: 1;
+            min-width: 300px;
+            max-width: 350px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        input[type="number"] {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Montserrat', sans-serif;
+            max-width: 100px;
+        }
+
+        select {
+            padding: 12px;
+            border: 1px solid #ccc;
+             
+            border-radius: 8px;
+font-size: 16px;
+font-family: 'Montserrat', sans-serif;
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-family: 'Montserrat', sans-serif;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .output-container, .graph-container {
+            flex: 1;
+            min-width: 400px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            display: none; /* Initially hidden */
+        }
+
+        .output-container h2, .graph-container h2 {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .results {
+            font-size: 1.2em;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .results p {
+            margin: 10px 0;
+        }
+
+        .results span {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .formula {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2em;
+            display: initial; /* Initially visible */
+        }
+
+        .graph {
+            text-align: center;
+        }
+
+        .graph img {
+            max-width: 100%;
+            margin-top: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/contrib/auto-render.min.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ]
+            });
+        });
+
+        function toggleFields(calcType) {
+            const capacitanceField = document.getElementById('capacitance-field');
+            const inductanceField = document.getElementById('inductance-field');
+            if (calcType === 'RLC') {
+                capacitanceField.style.display = 'block';
+                inductanceField.style.display = 'block';
+            } else if (calcType === 'RC') {
+                capacitanceField.style.display = 'block';
+                inductanceField.style.display = 'none';
+            } else if (calcType === 'RL') {
+                capacitanceField.style.display = 'none';
+                inductanceField.style.display = 'block';
+            }
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const response = await fetch('/', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (data.error) {
+                alert(data.error);
+            } else { 
+                document.getElementById('phasor-diagram').src = 'data:image/png;base64,' + data.plot_url;
+                document.getElementById('current').textContent = data.current.toFixed(2) + ' A';
+                document.getElementById('impedance').textContent = data.impedance.toFixed(2) + ' Ω';
+                document.getElementById('phase').textContent = data.phase.toFixed(2) + '°';
+                document.getElementById('power-factor').textContent = data.power_factor.toFixed(2);
+                document.getElementById('reactive-power').textContent = data.reactive_power.toFixed(2) + ' VAR';
+                document.getElementById('active-power').textContent = data.active_power.toFixed(2) + ' W';
+                document.getElementById('apparent-power').textContent = data.apparent_power.toFixed(2) + ' VA';
+  
+                document.getElementById('power-resistor').textContent = data.power_resistor.toFixed(2) + ' W';
+document.getElementById('power-capacitor').textContent = data.power_capacitor.toFixed(2) + ' W';
+document.getElementById('power-inductor').textContent = data.power_inductor.toFixed(2) + ' W';
+document.getElementById('output').style.display = 'block';
+document.getElementById('graph').style.display = 'block'; // Show the graph container
+}
+}
+</script>
+</head>
+<body>
+<h1><i class="fas fa-bolt"></i> RL, RC, RLC Calculator</h1>
+<div class="container">
+<div class="form-container">
+<form onsubmit="handleSubmit(event)">
+<label for="calc-type">Select Calculator:</label>
+<select id="calc-type" name="calc_type" onchange="toggleFields(this.value)">
+<option value="RLC">RLC Calculator</option>
+<option value="RC">RC Calculator</option>
+<option value="RL">RL Calculator</option>
+</select>
+<label for="resistance">Resistance (R) [Ohms]:</label>
+<input type="number" id="resistance" name="resistance" step="any" required>
+<div id="capacitance-field">
+<label for="capacitance">Capacitance (C) [µF]:</label>
+<input type="number" id="capacitance" name="capacitance" step="any">
+</div>
+<div id="inductance-field">
+<label for="inductance">Inductance (L) [mH]:</label>
+<input type="number" id="inductance" name="inductance" step="any">
+</div>
+<label for="frequency">Frequency (f) [Hz]:</label>
+<input type="number" id="frequency" name="frequency" step="any" required>
+<label for="voltage">Voltage (V) [Volts]:</label>
+<input type="number" id="voltage" name="voltage" step="any" required>
+<button type="submit"><i class="fas fa-calculator"></i> Calculate</button>
+</form>
+</div>
+<!-- Formula Container -->
+<div class="formula-container">
+<h2>Formulas</h2>
+<div class="formula">
+<p>\[ Z = \sqrt{R^2 + (X_L - X_C)^2} \]</p>
+<p>\[ Q = V \cdot I \cdot \sin(\phi) \]</p>
+<p>\[ P = V \cdot I \cdot \cos(\phi) \]</p>
+<p>\[ S = V \cdot I \]</p>
+<p>\[ \text{Power Factor} = \cos(\phi) = \frac{R}{Z} \]</p>
+<p>\[ X_L = 2 \cdot \pi \cdot f \cdot L \]</p>
+<p>\[ X_C = \frac{1}{2 \cdot \pi \cdot f \cdot C} \]</p>
+<p>\[ V_R = R \cdot I \]</p>
+<p>\[ V_L = X_L \cdot I \]</p>
+<p>\[ V_C = X_C \cdot I \]</p>
+<p>\[ V = \sqrt{V_R^2 + (V_L - V_C)^2} \]</p>
+</div>
+</div>
+<!-- Results Container -->
+<div class="output-container" id="output">
+<h2>Results</h2>
+<div class="results">
+<p><strong>Current (I):</strong> <span id="current"></span></p>
+<p><strong>Impedance (Z):</strong> <span id="impedance"></span></p>
+<p><strong>Phase (degrees):</strong> <span id="phase"></span></p>
+<p><strong>Power Factor:</strong> <span id="power-factor"></span></p>
+<p><strong>Reactive Power (Q):</strong> <span id="reactive-power"></span></p>
+<p><strong>Active Power (P):</strong> <span id="active-power"></span></p>
+<p><strong>Apparent Power (S):</strong> <span id="apparent-power"></span></p>
+<p><strong>Power through Resistor:</strong> <span id="power-resistor"></span></p>
+<p><strong>Power through Capacitor:</strong> <span id="power-capacitor"></span></p>
+<p><strong>Power through Inductor:</strong> <span id="power-inductor"></span></p>
+</div>
+</div>
+<!--  
+Graph Container -->
+<div class="graph-container" id="graph">
+    <h2>Phasor Diagram</h2>
+    <div class="graph">
+    <img id="phasor-diagram" src="" alt="Phasor Diagram">
+    </div>
+    </div>
+    </div>
+    </body>
+    </html>
+    

@@ -1,0 +1,45 @@
+import os
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+
+# URL of the webpage to scrape
+url = "https://www.indiamart.com/proddetail/fresh-organic-apple-15246280562.html"
+
+# Send a request to the webpage
+response = requests.get(url)
+if response.status_code == 200:
+    # Parse the webpage content
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Directory to store images
+    img_dir = 'all_apple_images'
+    os.makedirs(img_dir, exist_ok=True)
+
+    # Extract image URLs from <img> tags
+    img_tags = soup.find_all('img')
+    img_urls = [img['src'] for img in img_tags if img.get('src')]
+
+    # Extract image URLs from inline styles
+    div_tags = soup.find_all('div', style=True)
+    for div in div_tags:
+        style = div['style']
+        if 'background-image' in style:
+            start = style.find('url(') + 4
+            end = style.find(')', start)
+            img_url = style[start:end].strip('\'"')
+            img_urls.append(img_url)
+
+    # Download and save each image
+    for idx, img_url in enumerate(img_urls):
+        # Handle relative URLs
+        img_url = urljoin(url, img_url)
+        
+        img_data = requests.get(img_url).content
+        img_name = os.path.join(img_dir, f'apple_image_{idx + 1}.jpg')
+        with open(img_name, 'wb') as handler:
+            handler.write(img_data)
+
+    print("Images have been downloaded and saved successfully.")
+else:
+    print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
